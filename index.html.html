@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Afrodite Roupas - Sistema</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body{margin:0;font-family:Arial;background:#5b0b1b;color:#fff;display:flex;justify-content:center}
+.container{max-width:1100px;width:100%;padding:20px}
+.menu{display:flex;justify-content:center;gap:20px;margin-bottom:20px;flex-wrap:wrap}
+.menu button{width:220px;height:110px;border:none;border-radius:14px;background:#ffffff15;color:#fff;font-size:18px;cursor:pointer}
+.card{background:#6b1626;padding:20px;border-radius:16px;margin-bottom:20px}
+.hidden{display:none}
+table{width:100%;border-collapse:collapse;text-align:center}
+th,td{padding:10px;border-bottom:1px solid rgba(255,255,255,.2)}
+input,select{padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,.3);background:transparent;color:#fff;text-align:center}
+.btn{padding:6px 12px;border-radius:8px;border:none;cursor:pointer}
+.btn-primary{background:#fff;color:#5b0b1b;font-weight:bold}
+.btn-outline{background:transparent;border:1px solid rgba(255,255,255,.4);color:#fff}
+
+@media print{
+body{background:#fff;color:#000}
+.menu,.card{display:none}
+#cupom{display:block}
+}
+
+#cupom{display:none;font-size:14px;text-align:center}
+</style>
+</head>
+<body>
+
+<div class="container">
+<h1 style="text-align:center">Afrodite Roupas</h1>
+
+<div class="menu">
+<button onclick="show('cadastro')">Cadastro</button>
+<button onclick="show('vendas')">Vendas</button>
+<button onclick="show('historico')">Histórico</button>
+<button onclick="show('lucros')">Lucros</button>
+</div>
+
+<!-- CADASTRO -->
+<div id="cadastro" class="card hidden">
+<h2>Produtos</h2>
+<input id="cNome" placeholder="Nome">
+<input id="cCusto" type="number" placeholder="Custo">
+<input id="cPreco" type="number" placeholder="Venda">
+<input id="cQtd" type="number" placeholder="Estoque">
+<br><br>
+<button class="btn btn-primary" onclick="addProduto()">Adicionar</button>
+
+<table>
+<thead>
+<tr>
+<th>Nome</th>
+<th>Custo</th>
+<th>Venda</th>
+<th>Estoque</th>
+<th>Ação</th>
+</tr>
+</thead>
+<tbody id="listaCadastro"></tbody>
+</table>
+</div>
+
+<!-- VENDAS -->
+<div id="vendas" class="card hidden">
+<h2>Venda</h2>
+<input id="cliente" placeholder="Nome do cliente">
+<br><br>
+
+<table>
+<thead>
+<tr>
+<th>Produto</th>
+<th>Preço</th>
+<th>Estoque</th>
+<th>Qtd</th>
+<th>Ação</th>
+</tr>
+</thead>
+<tbody id="listaProdutos"></tbody>
+</table>
+
+<h3>Carrinho</h3>
+<table>
+<thead>
+<tr><th>Produto</th><th>Qtd</th><th>Total</th></tr>
+</thead>
+<tbody id="carrinhoEl"></tbody>
+</table>
+
+<p><b>Total: R$ <span id="totalCarrinho">0.00</span></b></p>
+<select id="pagamento">
+<option>Dinheiro</option>
+<option>Pix</option>
+<option>Cartão</option>
+</select>
+<br><br>
+<button class="btn btn-primary" onclick="finalizarVenda()">Vender e Imprimir</button>
+</div>
+
+<!-- HISTÓRICO -->
+<div id="historico" class="card hidden">
+<h2>Histórico de Vendas</h2>
+<div id="listaHistorico"></div>
+</div>
+
+<!-- LUCROS -->
+<div id="lucros" class="card hidden">
+<h2>Lucros</h2>
+<p><b>Lucro Total:</b> R$ <span id="lucroTotal">0.00</span></p>
+<div id="lucroDetalhado"></div>
+</div>
+
+<!-- CUPOM -->
+<div id="cupom">
+<h2>AFRODITE ROUPAS</h2>
+<p id="cupomInfo"></p>
+<p><b>Cliente:</b> <span id="cupomCliente"></span></p>
+<hr>
+<div id="cupomItens"></div>
+<hr>
+<p>Total: R$ <span id="cupomTotal"></span></p>
+<p>Pagamento: <span id="cupomPag"></span></p>
+</div>
+
+</div>
+
+<script>
+let produtos = JSON.parse(localStorage.getItem("produtos")||"[]");
+let vendas = JSON.parse(localStorage.getItem("vendas")||"[]");
+let vendaId = Number(localStorage.getItem("vendaId")||1);
+let carrinho = [];
+
+function show(id){
+['cadastro','vendas','historico','lucros'].forEach(x=>document.getElementById(x).classList.add('hidden'));
+document.getElementById(id).classList.remove('hidden');
+if(id==='cadastro') renderCadastro();
+if(id==='vendas') renderProdutos();
+if(id==='historico') renderHistorico();
+if(id==='lucros') renderLucros();
+}
+
+function addProduto(){
+produtos.push({
+nome:cNome.value,
+custo:+cCusto.value,
+preco:+cPreco.value,
+estoque:+cQtd.value
+});
+cNome.value=cCusto.value=cPreco.value=cQtd.value="";
+save(); 
+renderCadastro();
+}
+
+function excluirProduto(i){
+if(!confirm("Excluir este produto?")) return;
+produtos.splice(i,1);
+save();
+renderCadastro();
+}
+
+function renderCadastro(){
+listaCadastro.innerHTML='';
+produtos.forEach((p,i)=>{
+listaCadastro.innerHTML+=`
+<tr>
+<td>${p.nome}</td>
+<td>R$ ${(p.custo||0).toFixed(2)}</td>
+<td>R$ ${p.preco.toFixed(2)}</td>
+<td>${p.estoque}</td>
+<td><button class="btn btn-outline" onclick="excluirProduto(${i})">Excluir</button></td>
+</tr>`;
+});
+}
+
+function renderProdutos(){
+listaProdutos.innerHTML='';
+produtos.forEach((p,i)=>{
+listaProdutos.innerHTML+=`
+<tr>
+<td>${p.nome}</td>
+<td>R$ ${p.preco.toFixed(2)}</td>
+<td>${p.estoque}</td>
+<td><input type="number" value="1" min="1" id="q${i}" style="width:60px"></td>
+<td><button class="btn btn-outline" onclick="addCarrinho(${i})">+</button></td>
+</tr>`;
+});
+}
+
+function addCarrinho(i){
+let q=+document.getElementById("q"+i).value;
+if(q>produtos[i].estoque) return alert("Estoque insuficiente");
+produtos[i].estoque-=q;
+carrinho.push({nome:produtos[i].nome,qtd:q,preco:produtos[i].preco});
+renderCarrinho();
+}
+
+function renderCarrinho(){
+carrinhoEl.innerHTML='';
+let total=0;
+carrinho.forEach(c=>{
+let v=c.qtd*c.preco; 
+total+=v;
+carrinhoEl.innerHTML+=`<tr><td>${c.nome}</td><td>${c.qtd}</td><td>R$ ${v.toFixed(2)}</td></tr>`;
+});
+totalCarrinho.innerText=total.toFixed(2);
+}
+
+function finalizarVenda(){
+let clienteNome = cliente.value || "Não informado";
+let total=carrinho.reduce((s,c)=>s+c.qtd*c.preco,0);
+let data=new Date().toLocaleString();
+
+let lucro = carrinho.reduce((s,c)=>{
+let p=produtos.find(p=>p.nome===c.nome);
+return s+((c.preco-(p?.custo||0))*c.qtd);
+},0);
+
+vendas.push({
+id:vendaId,
+data,
+cliente:clienteNome,
+total,
+lucro,
+itens:[...carrinho],
+cancelada:false
+});
+
+cupomInfo.innerText="Venda Nº "+vendaId+" - "+data;
+cupomCliente.innerText=clienteNome;
+cupomItens.innerHTML='';
+carrinho.forEach(c=>{
+cupomItens.innerHTML+=`${c.nome} x${c.qtd} - R$ ${(c.qtd*c.preco).toFixed(2)}<br>`;
+});
+cupomTotal.innerText=total.toFixed(2);
+cupomPag.innerText=pagamento.value;
+
+vendaId++; 
+carrinho=[]; 
+cliente.value='';
+save();
+
+document.getElementById("cupom").style.display="block";
+window.print();
+document.getElementById("cupom").style.display="none";
+renderCarrinho();
+}
+
+function cancelarVenda(id){
+let v = vendas.find(x=>x.id===id);
+if(!v || v.cancelada) return;
+if(!confirm("Cancelar esta venda?")) return;
+
+v.itens.forEach(i=>{
+let p = produtos.find(p=>p.nome===i.nome);
+if(p) p.estoque += i.qtd;
+});
+v.cancelada = true;
+save();
+renderHistorico();
+}
+
+function renderHistorico(){
+listaHistorico.innerHTML='';
+if(vendas.length===0){
+listaHistorico.innerHTML='<p>Nenhuma venda.</p>';
+return;
+}
+vendas.forEach(v=>{
+listaHistorico.innerHTML+=`
+<p>
+<b>Venda ${v.id}</b><br>
+Cliente: ${v.cliente}<br>
+Total: R$ ${v.total.toFixed(2)}<br>
+Lucro: R$ ${(v.lucro||0).toFixed(2)}<br>
+Status: ${v.cancelada?'CANCELADA':'ATIVA'}<br>
+${v.cancelada?'':'<button class="btn btn-outline" onclick="cancelarVenda('+v.id+')">Cancelar venda</button>'}
+</p><hr>`;
+});
+}
+
+function renderLucros(){
+let totalLucro=0;
+lucroDetalhado.innerHTML='';
+vendas.forEach(v=>{
+if(v.cancelada) return;
+totalLucro+=v.lucro||0;
+lucroDetalhado.innerHTML+=`
+<p>
+<b>Venda ${v.id}</b><br>
+Cliente: ${v.cliente}<br>
+Lucro: R$ ${(v.lucro||0).toFixed(2)}
+</p><hr>`;
+});
+lucroTotal.innerText=totalLucro.toFixed(2);
+}
+
+function save(){
+localStorage.setItem("produtos",JSON.stringify(produtos));
+localStorage.setItem("vendas",JSON.stringify(vendas));
+localStorage.setItem("vendaId",vendaId);
+}
+</script>
+
+</body>
+</html>
