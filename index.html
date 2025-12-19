@@ -244,8 +244,11 @@ cliente.value='';
 save();
 
 document.getElementById("cupom").style.display="block";
-window.print();
-document.getElementById("cupom").style.display="none";
+
+setTimeout(()=>{
+  alert("Comprovante pronto.\nUse Compartilhar → Imprimir ou Salvar em PDF.");
+},300);
+
 renderCarrinho();
 }
 
@@ -307,4 +310,5 @@ localStorage.setItem("vendaId",vendaId);
 
 </body>
 </html>
+
 
