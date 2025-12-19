@@ -1,0 +1,225 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Afrodite Beleza e Cuidado</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body{margin:0;font-family:Arial;background:#5b0b1b;color:#fff;display:flex;justify-content:center}
+.container{max-width:1100px;width:100%;padding:20px}
+
+header{
+  display:flex;
+  align-items:center;
+  gap:20px;
+  margin-bottom:25px;
+}
+header img{
+  height:90px;
+  object-fit:contain;
+}
+header h1{
+  margin:0;
+  font-size:34px;
+  font-weight:bold;
+}
+
+.menu{display:flex;justify-content:center;gap:20px;margin-bottom:20px;flex-wrap:wrap}
+.menu button{width:220px;height:110px;border:none;border-radius:14px;background:#ffffff15;color:#fff;font-size:18px;cursor:pointer}
+.card{background:#6b1626;padding:20px;border-radius:16px;margin-bottom:20px}
+.hidden{display:none}
+table{width:100%;border-collapse:collapse;text-align:center}
+th,td{padding:10px;border-bottom:1px solid rgba(255,255,255,.2)}
+input,select{padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,.3);background:transparent;color:#fff;text-align:center}
+.btn{padding:8px 12px;border-radius:10px;border:none;cursor:pointer;margin:3px}
+.btn-primary{background:#fff;color:#5b0b1b;font-weight:bold}
+.btn-danger{background:#ff4d4d;color:#fff}
+.btn-warning{background:#ffc107;color:#000}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+<header>
+  <img src="logo_afrodite.png" alt="Afrodite Beleza e Cuidado">
+  <h1>Afrodite Beleza e Cuidado</h1>
+</header>
+
+<div class="menu">
+  <button onclick="mostrar('produtos')">Produtos</button>
+  <button onclick="mostrar('vendas')">Venda</button>
+  <button onclick="mostrar('historico')">Histórico</button>
+  <button onclick="mostrar('lucros')">Lucros</button>
+</div>
+
+<div id="produtos" class="card">
+  <h2>Cadastro de Produtos</h2>
+  <input id="nomeProduto" placeholder="Nome">
+  <input id="precoProduto" type="number" placeholder="Preço">
+  <input id="estoqueProduto" type="number" placeholder="Estoque">
+  <button class="btn btn-primary" onclick="addProduto()">Salvar</button>
+
+  <table>
+    <thead>
+      <tr><th>Produto</th><th>Preço</th><th>Estoque</th><th>Ações</th></tr>
+    </thead>
+    <tbody id="listaProdutos"></tbody>
+  </table>
+</div>
+
+<div id="vendas" class="card hidden">
+  <h2>Venda</h2>
+  <input id="clienteVenda" placeholder="Cliente">
+  <select id="produtoVenda"></select>
+  <input id="quantidadeVenda" type="number" placeholder="Qtd">
+  <button class="btn btn-primary" onclick="finalizarVenda()">Finalizar Venda</button>
+</div>
+
+<div id="historico" class="card hidden">
+  <h2>Histórico de Vendas</h2>
+  <table>
+    <thead>
+      <tr><th>Cliente</th><th>Produto</th><th>Qtd</th><th>Total</th><th>Data</th><th>Ações</th></tr>
+    </thead>
+    <tbody id="listaVendas"></tbody>
+  </table>
+</div>
+
+<div id="lucros" class="card hidden">
+  <h2>Lucros</h2>
+  <h3 id="totalLucro">Total vendido: R$ 0,00</h3>
+</div>
+
+</div>
+
+<script>
+let produtos = JSON.parse(localStorage.getItem("produtos")) || [];
+let vendas = JSON.parse(localStorage.getItem("vendas")) || [];
+let editIndex = null;
+
+function mostrar(id){
+  document.querySelectorAll('.card').forEach(c=>c.classList.add('hidden'));
+  document.getElementById(id).classList.remove('hidden');
+  if(id==='lucros') calcularLucros();
+}
+
+function salvarProdutos(){
+  localStorage.setItem("produtos", JSON.stringify(produtos));
+  atualizarProdutos();
+  atualizarSelect();
+}
+
+function addProduto(){
+  if(editIndex !== null){
+    produtos[editIndex] = {
+      nome: nomeProduto.value,
+      preco: parseFloat(precoProduto.value),
+      estoque: parseInt(estoqueProduto.value)
+    };
+    editIndex = null;
+  } else {
+    produtos.push({
+      nome: nomeProduto.value,
+      preco: parseFloat(precoProduto.value),
+      estoque: parseInt(estoqueProduto.value)
+    });
+  }
+  nomeProduto.value = precoProduto.value = estoqueProduto.value = "";
+  salvarProdutos();
+}
+
+function editarProduto(i){
+  const p = produtos[i];
+  nomeProduto.value = p.nome;
+  precoProduto.value = p.preco;
+  estoqueProduto.value = p.estoque;
+  editIndex = i;
+}
+
+function excluirProduto(i){
+  if(!confirm("Deseja excluir este produto?")) return;
+  produtos.splice(i,1);
+  salvarProdutos();
+}
+
+function atualizarProdutos(){
+  listaProdutos.innerHTML="";
+  produtos.forEach((p,i)=>{
+    listaProdutos.innerHTML += `<tr>
+      <td>${p.nome}</td>
+      <td>R$ ${p.preco.toFixed(2)}</td>
+      <td>${p.estoque}</td>
+      <td>
+        <button class="btn btn-warning" onclick="editarProduto(${i})">Editar</button>
+        <button class="btn btn-danger" onclick="excluirProduto(${i})">Excluir</button>
+      </td>
+    </tr>`;
+  });
+}
+
+function atualizarSelect(){
+  produtoVenda.innerHTML="";
+  produtos.forEach(p=>{
+    produtoVenda.innerHTML += `<option value="${p.nome}">${p.nome}</option>`;
+  });
+}
+
+function finalizarVenda(){
+  const produto = produtos.find(p=>p.nome===produtoVenda.value);
+  const qtd = parseInt(quantidadeVenda.value);
+  if(!produto || produto.estoque < qtd) return alert("Estoque insuficiente");
+
+  produto.estoque -= qtd;
+  salvarProdutos();
+
+  vendas.push({
+    cliente: clienteVenda.value,
+    produto: produto.nome,
+    qtd,
+    total: produto.preco * qtd,
+    data: new Date().toLocaleString()
+  });
+  localStorage.setItem("vendas", JSON.stringify(vendas));
+  atualizarVendas();
+}
+
+function atualizarVendas(){
+  listaVendas.innerHTML="";
+  vendas.forEach((v,i)=>{
+    listaVendas.innerHTML += `<tr>
+      <td>${v.cliente}</td>
+      <td>${v.produto}</td>
+      <td>${v.qtd}</td>
+      <td>R$ ${v.total.toFixed(2)}</td>
+      <td>${v.data}</td>
+      <td><button class="btn btn-danger" onclick="cancelarVenda(${i})">Cancelar</button></td>
+    </tr>`;
+  });
+}
+
+function cancelarVenda(i){
+  if(!confirm("Cancelar esta venda?")) return;
+  const venda = vendas[i];
+  const produto = produtos.find(p=>p.nome===venda.produto);
+  if(produto) produto.estoque += venda.qtd;
+  vendas.splice(i,1);
+  localStorage.setItem("vendas", JSON.stringify(vendas));
+  salvarProdutos();
+  atualizarVendas();
+}
+
+function calcularLucros(){
+  let soma = 0;
+  vendas.forEach(v=> soma += v.total);
+  totalLucro.innerText = "Total vendido: R$ " + soma.toFixed(2);
+}
+
+atualizarProdutos();
+atualizarSelect();
+atualizarVendas();
+</script>
+
+</body>
+</html>
