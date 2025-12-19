@@ -116,15 +116,20 @@ body{background:#fff;color:#000}
 
 <!-- CUPOM -->
 <div id="cupom">
-<h2>AFRODITE ROUPAS</h2>
-<p id="cupomInfo"></p>
-<p><b>Cliente:</b> <span id="cupomCliente"></span></p>
-<hr>
-<div id="cupomItens"></div>
-<hr>
-<p>Total: R$ <span id="cupomTotal"></span></p>
-<p>Pagamento: <span id="cupomPag"></span></p>
+  <h2>AFRODITE ROUPAS</h2>
+  <p id="cupomInfo"></p>
+  <p><b>Cliente:</b> <span id="cupomCliente"></span></p>
+  <hr>
+  <div id="cupomItens"></div>
+  <hr>
+  <p><b>Total:</b> R$ <span id="cupomTotal"></span></p>
+  <p><b>Pagamento:</b> <span id="cupomPag"></span></p>
+
+  <br>
+  <button class="btn btn-primary" onclick="imprimirCupom()">Imprimir / Salvar PDF</button>
+  <button class="btn btn-outline" onclick="fecharCupom()">Fechar</button>
 </div>
+
 
 </div>
 
@@ -242,8 +247,17 @@ vendaId++;
 carrinho=[]; 
 cliente.value='';
 save();
+document.getElementById("cupom").style.display = "block";
 
-document.getElementById("cupom").style.display="block";
+setTimeout(()=>{
+  alert(
+    "Comprovante pronto ✅\n\n" +
+    "No iPhone:\n" +
+    "Toque em Compartilhar → Imprimir ou Salvar em PDF"
+  );
+},300);
+
+
 
 setTimeout(()=>{
   alert("Comprovante pronto.\nUse Compartilhar → Imprimir ou Salvar em PDF.");
@@ -306,9 +320,19 @@ localStorage.setItem("produtos",JSON.stringify(produtos));
 localStorage.setItem("vendas",JSON.stringify(vendas));
 localStorage.setItem("vendaId",vendaId);
 }
+
+  function imprimirCupom(){
+  window.print();
+}
+
+function fecharCupom(){
+  document.getElementById("cupom").style.display = "none";
+}
+
 </script>
 
 </body>
 </html>
+
 
 
